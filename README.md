@@ -7,6 +7,8 @@ An offline, native desktop application designed to turn raw Moodle 4.x CSV expor
 ![Chart.js](https://img.shields.io/badge/Chart.js-Analytics-FF6384?logo=chartdotjs)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
+![NC State T2Go Dashboard Preview](screenshots/app-preview.png)
+
 ## Overview
 The **T2Go Dashboard** eliminates the hassle of manually digging through massive Moodle spreadsheets. Simply drag and drop your exported CSV files into the app, and it will instantly parse the data, generate interactive charts, and identify learners who may be falling behind. 
 
