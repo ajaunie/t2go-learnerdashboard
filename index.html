@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Textiles2Go — Learner Engagement Dashboard</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<script>
+tailwind.config={theme:{extend:{fontFamily:{display:['Space Grotesk','sans-serif'],body:['DM Sans','sans-serif']},colors:{
+base:{50:'#F8F9FA',100:'#F1F3F5',200:'#E9ECEF',300:'#DEE2E6',400:'#CED4DA',500:'#ADB5BD',600:'#6C757D',700:'#495057',800:'#343A40',900:'#212529',950:'#000000'},
+copper:{400:'#E63946',500:'#CC0000',600:'#990000'},
+sage:{300:'#4ADE80',400:'#22C55E',500:'#007A33',600:'#005A26'},
+amber:{400:'#FBBF24',500:'#D97706'},
+rose:{500:'#990000'}
+}}}}
+</script>
+<style>
+:root{--bg:#F8F9FA;--card:#FFF;--border:#E5E7EB;--text:#111827;--muted:#6B7280;--accent:#CC0000;--accent-light:#FEE2E2;--green:#007A33;--green-light:#DCFCE7;--amber:#D97706;--amber-light:#FEF3C7;--red:#990000;--red-light:#FEE2E2;--sidebar:#000000}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden}
+::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:#CED4DA;border-radius:3px}
+.sidebar{width:240px;min-height:100vh;background:var(--sidebar);position:fixed;left:0;top:0;z-index:50;display:flex;flex-direction:column;transition:transform .3s ease}
+.sidebar-logo{padding:20px 18px 16px;border-bottom:1px solid rgba(255,255,255,.06)}
+.sidebar-logo h1{font-family:'Space Grotesk',sans-serif;font-size:17px;font-weight:700;color:#FAF8F5}
+.sidebar-logo h1 span{color:var(--accent)}
+.sidebar-logo p{font-size:10.5px;color:rgba(250,248,245,.3);margin-top:2px}
+.import-status{padding:16px 14px;flex:1}
+.status-section-label{font-family:'Space Grotesk',sans-serif;font-size:9.5px;font-weight:600;color:rgba(250,248,245,.22);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px}
+.status-item{display:flex;align-items:center;gap:9px;padding:7px 8px;border-radius:6px;margin-bottom:2px;font-size:12.5px;color:rgba(250,248,245,.4);transition:all .15s ease}
+.status-item.loaded{color:rgba(250,248,245,.75)}
+.status-dot{width:7px;height:7px;border-radius:50%;background:rgba(250,248,245,.12);flex-shrink:0;transition:background .2s ease}
+.status-item.loaded .status-dot{background:var(--green)}
+.status-item.error .status-dot{background:var(--red)}
+.status-count{margin-left:auto;font-family:'Space Grotesk',sans-serif;font-size:10.5px;color:rgba(250,248,245,.25)}
+.status-item.loaded .status-count{color:rgba(250,248,245,.5)}
+.sidebar-actions{padding:12px 14px;border-top:1px solid rgba(255,255,255,.06)}
+.btn-sample{width:100%;padding:9px 12px;border-radius:7px;border:1px solid rgba(204,0,0,.25);background:rgba(204,0,0,.08);color:var(--accent);font-size:12px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;transition:all .15s ease;display:flex;align-items:center;justify-content:center;gap:7px}
+.btn-sample:hover{background:rgba(204,0,0,.15);border-color:rgba(204,0,0,.4)}
+.btn-clear{width:100%;padding:8px 12px;border-radius:7px;border:1px solid rgba(255,255,255,.06);background:transparent;color:rgba(250,248,245,.35);font-size:11.5px;font-weight:500;font-family:'DM Sans',sans-serif;cursor:pointer;margin-top:6px;transition:all .15s ease}
+.btn-clear:hover{background:rgba(255,255,255,.04);color:rgba(250,248,245,.6)}
+.sidebar-footer{padding:12px 14px;border-top:1px solid rgba(255,255,255,.06);font-size:10px;color:rgba(250,248,245,.15);line-height:1.5}
+.main{margin-left:240px;min-height:100vh}
+.topbar{padding:16px 28px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);background:var(--card);position:sticky;top:0;z-index:40;gap:12px;flex-wrap:wrap}
+.topbar-left h2{font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:700}
+.topbar-left p{font-size:12px;color:var(--muted);margin-top:1px}
+.date-badge{display:inline-flex;align-items:center;gap:5px;padding:5px 11px;background:var(--base-50);border:1px solid var(--border);border-radius:5px;font-size:11.5px;color:var(--muted);font-family:'Space Grotesk',sans-serif;font-weight:500}
+.content{padding:20px 28px 48px}
+.import-panel{background:var(--card);border:1px solid var(--border);border-radius:10px;margin-bottom:20px;overflow:hidden}
+.import-panel-header{padding:16px 20px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;transition:background .15s ease}
+.import-panel-header:hover{background:var(--base-50)}
+.import-panel-header h3{font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px}
+.import-panel-header h3 i{color:var(--accent);font-size:13px}
+.import-summary{display:flex;gap:10px;align-items:center}
+.import-pip{width:8px;height:8px;border-radius:50%;background:var(--border);transition:background .2s ease}
+.import-pip.active{background:var(--green)}
+.chevron{color:var(--muted);transition:transform .2s ease;font-size:12px}
+.chevron.open{transform:rotate(180deg)}
+.import-body{padding:0 20px 20px;display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+.drop-zone{border:2px dashed var(--border);border-radius:8px;padding:16px;text-align:center;transition:all .2s ease;cursor:pointer;position:relative;min-height:120px;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.drop-zone:hover{border-color:var(--accent);background:rgba(204,0,0,.02)}
+.drop-zone.dragover{border-color:var(--accent);background:rgba(204,0,0,.05);transform:scale(1.005)}
+.drop-zone.loaded{border-color:var(--green);border-style:solid;background:var(--green-light)}
+.drop-zone.error{border-color:var(--red);border-style:solid;background:var(--red-light)}
+.drop-zone-icon{font-size:20px;color:var(--border);margin-bottom:6px;transition:color .2s ease}
+.drop-zone:hover .drop-zone-icon{color:var(--accent)}
+.drop-zone.loaded .drop-zone-icon{color:var(--green)}
+.drop-zone-label{font-family:'Space Grotesk',sans-serif;font-size:12.5px;font-weight:600;color:var(--text);margin-bottom:2px}
+.drop-zone-desc{font-size:10.5px;color:var(--muted);line-height:1.4;max-width:220px}
+.drop-zone-file{font-size:11px;color:var(--green);font-weight:600;margin-top:4px;font-family:'Space Grotesk',sans-serif}
+.drop-zone-rows{font-size:10px;color:var(--muted);margin-top:1px}
+.drop-zone-clear{position:absolute;top:6px;right:6px;width:22px;height:22px;border-radius:4px;border:none;background:rgba(0,0,0,.06);color:var(--muted);cursor:pointer;font-size:10px;display:none;align-items:center;justify-content:center;transition:all .15s ease}
+.drop-zone.loaded .drop-zone-clear{display:flex}
+.drop-zone-clear:hover{background:rgba(0,0,0,.12);color:var(--red)}
+.moodle-path{font-size:9.5px;color:var(--muted);opacity:.7;margin-top:4px;font-style:italic}
+.debug-panel{background:#111827;border-radius:8px;margin-top:12px;overflow:hidden;display:none;font-size:12px}
+.debug-panel.visible{display:block}
+.debug-header{padding:10px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,.06);cursor:pointer}
+.debug-header span{font-family:'Space Grotesk',sans-serif;font-size:11px;font-weight:600;color:rgba(250,248,245,.6)}
+.debug-header i{color:rgba(250,248,245,.3);font-size:10px;transition:transform .2s}
+.debug-header i.open{transform:rotate(180deg)}
+.debug-body{padding:12px 14px;max-height:340px;overflow:auto;display:none}
+.debug-body.open{display:block}
+.debug-body pre{font-family:'Monaco,Consolas,monospace';font-size:11px;line-height:1.6;color:rgba(250,248,245,.7);white-space:pre-wrap;word-break:break-all}
+.dbg-ok{color:#5BAF76}.dbg-fail{color:#E57373}.dbg-warn{color:#D4A843}.dbg-dim{color:rgba(250,248,245,.3)}.dbg-label{color:rgba(250,248,245,.45)}
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+.kpi-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:18px 20px;position:relative;overflow:hidden;transition:box-shadow .2s ease}
+.kpi-card:hover{box-shadow:0 4px 20px rgba(30,27,24,.06)}
+.kpi-card::after{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.kpi-card.copper::after{background:var(--accent)}.kpi-card.sage::after{background:var(--green)}.kpi-card.amber::after{background:var(--amber)}.kpi-card.rose::after{background:var(--red)}
+.kpi-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;margin-bottom:12px}
+.kpi-icon.copper{background:var(--accent-light);color:var(--accent)}.kpi-icon.sage{background:var(--green-light);color:var(--green)}.kpi-icon.amber{background:var(--amber-light);color:var(--amber)}.kpi-icon.rose{background:var(--red-light);color:var(--red)}
+.kpi-label{font-size:11.5px;color:var(--muted);font-weight:500;margin-bottom:5px}
+.kpi-value{font-family:'Space Grotesk',sans-serif;font-size:26px;font-weight:700;line-height:1}
+.kpi-sub{font-size:11.5px;color:var(--muted);margin-top:7px;display:flex;align-items:center;gap:4px}
+.kpi-sub .up{color:var(--green);font-weight:600}.kpi-sub .down{color:var(--red);font-weight:600}
+.kpi-na{font-size:12px;color:var(--muted);font-style:italic}
+.chart-grid{display:grid;grid-template-columns:2fr 1fr;gap:14px;margin-bottom:14px}
+.chart-grid-equal{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.chart-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:20px;transition:box-shadow .2s ease;position:relative}
+.chart-card:hover{box-shadow:0 4px 20px rgba(30,27,24,.06)}
+.chart-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px}
+.chart-title{font-family:'Space Grotesk',sans-serif;font-size:13.5px;font-weight:600}
+.chart-subtitle{font-size:11px;color:var(--muted);margin-top:2px}
+.chart-legend{display:flex;gap:12px;flex-wrap:wrap}
+.legend-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted)}
+.legend-dot{width:8px;height:8px;border-radius:2px}
+.chart-wrap{position:relative;width:100%}
+.no-data-overlay{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(255,255,255,.88);border-radius:10px;z-index:5;pointer-events:none}
+.no-data-overlay i{font-size:26px;color:var(--border);margin-bottom:6px}
+.no-data-overlay p{font-size:12.5px;color:var(--muted);font-weight:500}
+.no-data-overlay span{font-size:11px;color:var(--border);margin-top:2px}
+.table-card{background:var(--card);border:1px solid var(--border);border-radius:10px;overflow:hidden;transition:box-shadow .2s ease;margin-bottom:14px}
+.table-card:hover{box-shadow:0 4px 20px rgba(30,27,24,.06)}
+.table-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.table-header h3{font-family:'Space Grotesk',sans-serif;font-size:13.5px;font-weight:600}
+.table-header p{font-size:11px;color:var(--muted);margin-top:1px}
+.data-table{width:100%;border-collapse:collapse;font-size:12.5px}
+.data-table thead th{background:var(--base-50);font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:10.5px;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);text-align:left;padding:10px 16px;border-bottom:1px solid var(--border)}
+.data-table tbody td{padding:11px 16px;border-bottom:1px solid var(--border);vertical-align:middle}
+.data-table tbody tr{transition:background .1s ease}
+.data-table tbody tr:hover{background:rgba(204,0,0,.02)}
+.data-table tbody tr:last-child td{border-bottom:none}
+.risk-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:4px;font-size:11px;font-weight:600;font-family:'Space Grotesk',sans-serif}
+.risk-high{background:var(--red-light);color:var(--red)}.risk-medium{background:var(--amber-light);color:var(--amber)}
+.progress-mini{display:flex;align-items:center;gap:7px}
+.progress-track{flex:1;height:6px;background:var(--base-100);border-radius:3px;overflow:hidden;min-width:60px}
+.progress-fill{height:100%;border-radius:3px;transition:width .6s ease}
+.progress-pct{font-family:'Space Grotesk',sans-serif;font-size:11.5px;font-weight:600;min-width:34px;text-align:right}
+.avatar-sm{width:26px;height:26px;border-radius:50%;object-fit:cover;border:2px solid var(--border)}
+.heat-cell{aspect-ratio:1;border-radius:3px;transition:transform .1s ease;cursor:pointer}
+.heat-cell:hover{transform:scale(1.3);z-index:2;position:relative}
+.tab-btn{padding:4px 11px;border-radius:5px;font-size:11.5px;font-weight:500;border:1px solid transparent;background:transparent;color:var(--muted);cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s ease}
+.tab-btn:hover{background:var(--base-100)}.tab-btn.active{background:var(--accent-light);color:var(--accent);border-color:rgba(204,0,0,.2)}
+.filter-btn{display:inline-flex;align-items:center;gap:5px;padding:6px 12px;border:1px solid var(--border);border-radius:6px;background:var(--card);font-size:12px;font-weight:500;color:var(--muted);cursor:pointer;transition:all .15s ease;font-family:'DM Sans',sans-serif}
+.filter-btn:hover{border-color:var(--accent);color:var(--accent)}
+.toast{position:fixed;bottom:24px;right:24px;background:var(--sidebar);color:var(--base-50);padding:13px 18px;border-radius:8px;font-size:12.5px;display:flex;align-items:center;gap:9px;z-index:100;transform:translateY(120%);opacity:0;transition:all .35s cubic-bezier(.4,0,.2,1);box-shadow:0 8px 32px rgba(0,0,0,.2);max-width:400px}
+.toast.show{transform:translateY(0);opacity:1}
+.toast i{font-size:14px;flex-shrink:0}
+.toast.success i{color:var(--green)}.toast.error i{color:var(--red)}.toast.info i{color:var(--accent)}
+.mobile-toggle{display:none;position:fixed;top:14px;left:14px;z-index:60;width:38px;height:38px;border-radius:8px;background:var(--sidebar);color:var(--base-50);border:none;cursor:pointer;font-size:15px;align-items:center;justify-content:center}
+.sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:45}
+@media(max-width:1100px){.kpi-grid{grid-template-columns:repeat(2,1fr)}.chart-grid,.chart-grid-equal{grid-template-columns:1fr}.import-body{grid-template-columns:1fr}}
+@media(max-width:768px){.mobile-toggle{display:flex}.sidebar{transform:translateX(-100%)}.sidebar.open{transform:translateX(0)}.sidebar-overlay.open{display:block}.main{margin-left:0}.topbar{padding:14px 14px 14px 58px}.content{padding:14px}.kpi-grid{gap:10px}.kpi-value{font-size:22px}}
+@media(max-width:440px){.kpi-grid{grid-template-columns:1fr}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+</style>
+</head>
+<body>
+<button class="mobile-toggle" onclick="toggleSidebar()" aria-label="Toggle navigation"><i class="fas fa-bars"></i></button>
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+<aside class="sidebar" id="sidebar" role="complementary">
+  <div class="sidebar-logo"><h1>Textiles2Go<span> Dashboard</span></h1><p>Engagement Analytics</p></div>
+  <div class="import-status" id="importStatus">
+    <div class="status-section-label">Data Sources</div>
+    <div class="status-item" id="statusLogs"><div class="status-dot"></div>Course Logs<span class="status-count" id="countLogs">&mdash;</span></div>
+    <div class="status-item" id="statusCompletion"><div class="status-dot"></div>Activity Completion<span class="status-count" id="countCompletion">&mdash;</span></div>
+    <div class="status-item" id="statusGrades"><div class="status-dot"></div>Gradebook Export<span class="status-count" id="countGrades">&mdash;</span></div>
+    <div class="status-item" id="statusUsers"><div class="status-dot"></div>Enrolled Users<span class="status-count" id="countUsers">&mdash;</span></div>
+  </div>
+  <div class="sidebar-actions">
+    <button class="btn-sample" onclick="loadSampleData()"><i class="fas fa-flask"></i> Load Sample Data</button>
+    <button class="btn-clear" onclick="clearAllData()"><i class="fas fa-trash-can" style="margin-right:4px;font-size:10px"></i> Clear All Data</button>
+  </div>
+  <div class="sidebar-footer">Parses Moodle 4.x CSV exports<br>Handles pipe, comma, tab, semicolon delimiters</div>
+</aside>
+<main class="main">
+  <header class="topbar">
+    <div class="topbar-left"><h2>Engagement Dashboard</h2><p id="dateRangeText">Import Moodle data to begin</p></div>
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <div class="date-badge" id="enrolledBadge" style="display:none"><i class="fas fa-users" style="font-size:10px;color:var(--accent)"></i> <span id="enrolledCount">0</span> enrolled</div>
+      <button class="filter-btn" onclick="exportSummary()"><i class="fas fa-download" style="font-size:10px"></i> Export</button>
+    </div>
+  </header>
+  <div class="content">
+    <div class="import-panel" id="importPanel">
+      <div class="import-panel-header" onclick="toggleImportPanel()">
+        <h3><i class="fas fa-file-import"></i> Import Moodle Data</h3>
+        <div style="display:flex;align-items:center;gap:14px">
+          <div class="import-summary"><div class="import-pip" id="pipLogs"></div><div class="import-pip" id="pipCompletion"></div><div class="import-pip" id="pipGrades"></div><div class="import-pip" id="pipUsers"></div></div>
+          <i class="fas fa-chevron-down chevron open" id="importChevron"></i>
+        </div>
+      </div>
+      <div class="import-body" id="importBody">
+        <div>
+          <div class="drop-zone" id="zoneLogs" onclick="document.getElementById('fileLogs').click()" ondragover="handleDragOver(event,'zoneLogs')" ondragleave="handleDragLeave(event,'zoneLogs')" ondrop="handleDrop(event,'logs')">
+            <input type="file" id="fileLogs" accept=".csv,.txt,.tsv" style="display:none" onchange="handleFileSelect(this,'logs')">
+            <button class="drop-zone-clear" onclick="event.stopPropagation();clearData('logs')" aria-label="Remove"><i class="fas fa-xmark"></i></button>
+            <div class="drop-zone-icon"><i class="fas fa-list-ul"></i></div>
+            <div class="drop-zone-label">Course Logs</div>
+            <div class="drop-zone-desc">Every event: views, lesson actions, grades, completions</div>
+            <div class="moodle-path">Reports &rarr; Logs &rarr; Download</div>
+            <div class="drop-zone-file" id="fileInfoLogs" style="display:none"></div>
+            <div class="drop-zone-rows" id="rowCountLogs" style="display:none"></div>
+          </div>
+          <div class="debug-panel" id="debugLogs"><div class="debug-header" onclick="toggleDebug('Logs')"><span><i class="fas fa-bug" style="margin-right:5px"></i> Parser Debug</span><i class="fas fa-chevron-down" id="debugChevronLogs"></i></div><div class="debug-body" id="debugBodyLogs"></div></div>
+        </div>
+        <div>
+          <div class="drop-zone" id="zoneCompletion" onclick="document.getElementById('fileCompletion').click()" ondragover="handleDragOver(event,'zoneCompletion')" ondragleave="handleDragLeave(event,'zoneCompletion')" ondrop="handleDrop(event,'completion')">
+            <input type="file" id="fileCompletion" accept=".csv,.txt,.tsv" style="display:none" onchange="handleFileSelect(this,'completion')">
+            <button class="drop-zone-clear" onclick="event.stopPropagation();clearData('completion')" aria-label="Remove"><i class="fas fa-xmark"></i></button>
+            <div class="drop-zone-icon"><i class="fas fa-clipboard-check"></i></div>
+            <div class="drop-zone-label">Activity Completion</div>
+            <div class="drop-zone-desc">Per-learner completion status for each activity</div>
+            <div class="moodle-path">Reports &rarr; Activity completion &rarr; Download</div>
+            <div class="drop-zone-file" id="fileInfoCompletion" style="display:none"></div>
+            <div class="drop-zone-rows" id="rowCountCompletion" style="display:none"></div>
+          </div>
+          <div class="debug-panel" id="debugCompletion"><div class="debug-header" onclick="toggleDebug('Completion')"><span><i class="fas fa-bug" style="margin-right:5px"></i> Parser Debug</span><i class="fas fa-chevron-down" id="debugChevronCompletion"></i></div><div class="debug-body" id="debugBodyCompletion"></div></div>
+        </div>
+        <div>
+          <div class="drop-zone" id="zoneGrades" onclick="document.getElementById('fileGrades').click()" ondragover="handleDragOver(event,'zoneGrades')" ondragleave="handleDragLeave(event,'zoneGrades')" ondrop="handleDrop(event,'grades')">
+            <input type="file" id="fileGrades" accept=".csv,.txt,.tsv" style="display:none" onchange="handleFileSelect(this,'grades')">
+            <button class="drop-zone-clear" onclick="event.stopPropagation();clearData('grades')" aria-label="Remove"><i class="fas fa-xmark"></i></button>
+            <div class="drop-zone-icon"><i class="fas fa-graduation-cap"></i></div>
+            <div class="drop-zone-label">Gradebook Export</div>
+            <div class="drop-zone-desc">Quiz and lesson scores per learner</div>
+            <div class="moodle-path">Grades &rarr; Export &rarr; Spreadsheet</div>
+            <div class="drop-zone-file" id="fileInfoGrades" style="display:none"></div>
+            <div class="drop-zone-rows" id="rowCountGrades" style="display:none"></div>
+          </div>
+          <div class="debug-panel" id="debugGrades"><div class="debug-header" onclick="toggleDebug('Grades')"><span><i class="fas fa-bug" style="margin-right:5px"></i> Parser Debug</span><i class="fas fa-chevron-down" id="debugChevronGrades"></i></div><div class="debug-body" id="debugBodyGrades"></div></div>
+        </div>
+        <div>
+          <div class="drop-zone" id="zoneUsers" onclick="document.getElementById('fileUsers').click()" ondragover="handleDragOver(event,'zoneUsers')" ondragleave="handleDragLeave(event,'zoneUsers')" ondrop="handleDrop(event,'users')">
+            <input type="file" id="fileUsers" accept=".csv,.txt,.tsv" style="display:none" onchange="handleFileSelect(this,'users')">
+            <button class="drop-zone-clear" onclick="event.stopPropagation();clearData('users')" aria-label="Remove"><i class="fas fa-xmark"></i></button>
+            <div class="drop-zone-icon"><i class="fas fa-users"></i></div>
+            <div class="drop-zone-label">Enrolled Users</div>
+            <div class="drop-zone-desc">Optional — names, emails, last access</div>
+            <div class="moodle-path">Participants &rarr; Export</div>
+            <div class="drop-zone-file" id="fileInfoUsers" style="display:none"></div>
+            <div class="drop-zone-rows" id="rowCountUsers" style="display:none"></div>
+          </div>
+          <div class="debug-panel" id="debugUsers"><div class="debug-header" onclick="toggleDebug('Users')"><span><i class="fas fa-bug" style="margin-right:5px"></i> Parser Debug</span><i class="fas fa-chevron-down" id="debugChevronUsers"></i></div><div class="debug-body" id="debugBodyUsers"></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="kpi-grid">
+      <div class="kpi-card copper"><div class="kpi-icon copper"><i class="fas fa-user-check"></i></div><div class="kpi-label">Active Learners (7-day)</div><div class="kpi-value" id="kpiActive"><span class="kpi-na">Awaiting logs</span></div><div class="kpi-sub" id="kpiActiveSub"></div></div>
+      <div class="kpi-card sage"><div class="kpi-icon sage"><i class="fas fa-chart-pie"></i></div><div class="kpi-label">Unique Learners</div><div class="kpi-value" id="kpiCompletion"><span class="kpi-na">Awaiting data</span></div><div class="kpi-sub" id="kpiCompletionSub"></div></div>
+      <div class="kpi-card amber"><div class="kpi-icon amber"><i class="fas fa-list-check"></i></div><div class="kpi-label">Total Log Events</div><div class="kpi-value" id="kpiEvents"><span class="kpi-na">Awaiting logs</span></div><div class="kpi-sub" id="kpiEventsSub"></div></div>
+      <div class="kpi-card rose"><div class="kpi-icon rose"><i class="fas fa-exclamation-triangle"></i></div><div class="kpi-label">At-Risk Learners</div><div class="kpi-value" id="kpiAtRisk"><span class="kpi-na">Awaiting data</span></div><div class="kpi-sub" id="kpiAtRiskSub"></div></div>
+    </div>
+    <div class="chart-grid">
+      <div class="chart-card" style="position:relative">
+        <div class="no-data-overlay" id="noTrend"><i class="fas fa-chart-line"></i><p>Weekly Engagement Trend</p><span>Import Course Logs CSV</span></div>
+        <div class="chart-header"><div><div class="chart-title">Weekly Engagement Trend</div><div class="chart-subtitle">Sessions, content views, and lesson interactions by week</div></div>
+          <div class="chart-legend"><div class="legend-item"><div class="legend-dot" style="background:#CC0000"></div>Sessions</div><div class="legend-item"><div class="legend-dot" style="background:#343A40"></div>Content Views</div><div class="legend-item"><div class="legend-dot" style="background:#990000"></div>Lesson Activity</div></div>
+        </div>
+        <div class="chart-wrap" style="height:270px"><canvas id="chartTrend"></canvas></div>
+      </div>
+      <div class="chart-card" style="position:relative">
+        <div class="no-data-overlay" id="noMix"><i class="fas fa-chart-pie"></i><p>Activity Distribution</p><span>Import Course Logs CSV</span></div>
+        <div class="chart-header"><div><div class="chart-title">Activity Type Distribution</div><div class="chart-subtitle">Event types aggregated from log data</div></div></div>
+        <div class="chart-wrap" style="height:270px"><canvas id="chartMix"></canvas></div>
+      </div>
+    </div>
+    <div class="chart-grid-equal">
+      <div class="chart-card" style="position:relative">
+        <div class="no-data-overlay" id="noModuleComp"><i class="fas fa-bars-progress"></i><p>Activity by Lesson</p><span>Import Course Logs CSV</span></div>
+        <div class="chart-header"><div><div class="chart-title">Activity by Lesson/Module</div><div class="chart-subtitle">Event counts per lesson from Event context</div></div></div>
+        <div class="chart-wrap" style="height:250px"><canvas id="chartModuleComp"></canvas></div>
+      </div>
+      <div class="chart-card" style="position:relative">
+        <div class="no-data-overlay" id="noQuiz"><i class="fas fa-clipboard-check"></i><p>Quiz Performance</p><span>Import Gradebook Export CSV</span></div>
+        <div class="chart-header"><div><div class="chart-title">Quiz Performance</div><div class="chart-subtitle">Average score and pass rate from gradebook</div></div>
+          <div class="chart-legend"><div class="legend-item"><div class="legend-dot" style="background:#CC0000"></div>Avg. Score</div><div class="legend-item"><div class="legend-dot" style="background:rgba(204,0,0,0.2)"></div>Pass Rate</div></div>
+        </div>
+        <div class="chart-wrap" style="height:250px"><canvas id="chartQuiz"></canvas></div>
+      </div>
+    </div>
+    <div class="chart-grid-equal">
+      <div class="chart-card" style="position:relative">
+        <div class="no-data-overlay" id="noHeat"><i class="fas fa-th"></i><p>Activity Heatmap</p><span>Import Course Logs CSV</span></div>
+        <div class="chart-header"><div><div class="chart-title">Weekly Activity Heatmap</div><div class="chart-subtitle">All events by day of week</div></div></div>
+        <div id="heatmapContainer" style="margin-top:6px"></div>
+        <div style="display:flex;align-items:center;gap:6px;margin-top:10px;justify-content:flex-end"><span style="font-size:10px;color:var(--muted)">Less</span><div style="display:flex;gap:2px" id="heatmapLegend"></div><span style="font-size:10px;color:var(--muted)">More</span></div>
+      </div>
+      <div class="chart-card" style="position:relative">
+        <div class="no-data-overlay" id="noForum"><i class="fas fa-chalkboard-user"></i><p>Lesson Interactions Over Time</p><span>Import Course Logs CSV</span></div>
+        <div class="chart-header"><div><div class="chart-title">Lesson Interactions Over Time</div><div class="chart-subtitle">Questions answered, lessons started, and content viewed</div></div>
+          <div class="chart-legend"><div class="legend-item"><div class="legend-dot" style="background:#CC0000"></div>Questions</div><div class="legend-item"><div class="legend-dot" style="background:#343A40"></div>Started/Ended</div><div class="legend-item"><div class="legend-dot" style="background:rgba(153,0,0,0.5)"></div>Content Pages</div></div>
+        </div>
+        <div class="chart-wrap" style="height:250px"><canvas id="chartForum"></canvas></div>
+      </div>
+    </div>
+    <div class="table-card">
+      <div class="table-header">
+        <div><h3>At-Risk Learner Identification</h3><p>No activity 7+ days or very low event count</p></div>
+        <div style="display:flex;gap:4px" id="riskTabs">
+          <button class="tab-btn active" onclick="filterRisk(this,'all')">All</button>
+          <button class="tab-btn" onclick="filterRisk(this,'high')">High</button>
+          <button class="tab-btn" onclick="filterRisk(this,'medium')">Medium</button>
+        </div>
+      </div>
+      <div style="overflow-x:auto"><table class="data-table"><thead><tr><th>Learner</th><th>Last Activity</th><th>Total Events</th><th>Lessons Started</th><th>Days Inactive</th><th>Risk Factor</th><th>Level</th></tr></thead><tbody id="riskTableBody"><tr><td colspan="7" style="text-align:center;padding:32px;color:var(--muted);font-size:13px"><i class="fas fa-shield-halved" style="font-size:20px;display:block;margin-bottom:8px;color:var(--border)"></i>Import data to identify at-risk learners</td></tr></tbody></table></div>
+    </div>
+    <div class="table-card">
+      <div class="table-header"><div><h3>Lesson-Level Engagement Detail</h3><p>Events grouped by lesson name from log Event context</p></div></div>
+      <div style="overflow-x:auto"><table class="data-table"><thead><tr><th>Lesson</th><th>Views</th><th>Questions</th><th>Starts</th><th>Completions</th><th>Total Events</th></tr></thead><tbody id="moduleDetailBody"><tr><td colspan="6" style="text-align:center;padding:32px;color:var(--muted);font-size:13px"><i class="fas fa-table" style="font-size:18px;display:block;margin-bottom:6px;color:var(--border)"></i>Import data to populate</td></tr></tbody></table></div>
+    </div>
+  </div>
+</main>
+<div class="toast" id="toast"><i class="fas fa-check-circle"></i><span id="toastMsg"></span></div>
+
+<script>
+const S={logs:null,completion:null,grades:null,users:null,dateRange:{min:null,max:null},totalEnrolled:0,atRiskList:[],moduleMap:{}};
+let charts={};
+const DAY_NAMES=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const MM={jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,oct:9,nov:10,dec:11};
+
+/* ===== CSV PARSER — handles pipe | comma | tab | semicolon ===== */
+function parseCSV(text){
+  if(text.charCodeAt(0)===0xFEFF)text=text.slice(1);
+  text=text.replace(/\r\n/g,'\n').replace(/\r/g,'\n');
+  const fl=text.split('\n')[0]||'';
+  let delim=',';
+  const pc=fl.split('|').length, cc=fl.split(',').length, tc=fl.split('\t').length, sc=fl.split(';').length;
+  if(pc>cc&&pc>tc&&pc>sc) delim='|';
+  else if(tc>cc&&tc>pc&&tc>sc) delim='\t';
+  else if(sc>cc&&sc>pc) delim=';';
+  const rows=[];let row=[],field='',inQ=false;
+  for(let i=0;i<text.length;i++){
+    const ch=text[i];
+    if(inQ){if(ch==='"'){if(text[i+1]==='"'){field+='"';i++}else inQ=false}else field+=ch}
+    else{if(ch==='"')inQ=true;else if(ch===delim){row.push(field.trim());field=''}else if(ch==='\n'){if(field||row.length){row.push(field.trim());rows.push(row);row=[];field=''}}else field+=ch}
+  }
+  if(field||row.length){row.push(field.trim());rows.push(row)}
+  while(rows.length&&rows[rows.length-1].every(c=>!c))rows.pop();
+  // Detect and strip leading row-number column
+  if(rows.length>1){
+    const allNum=rows.slice(0,Math.min(6,rows.length)).every(r=>/^\d+$/.test(r[0]));
+    if(allNum){rows.forEach(r=>r.shift());if(rows[0]&&rows[0][0])rows[0][0]=rows[0][0].replace(/^\uFEFF/,'')}
+  }
+  return{rows,delimiter:delim};
+}
+
+/* ===== DATE PARSER — handles Moodle's many formats ===== */
+function parseMoodleDate(str){
+  if(!str)return null;str=str.trim().replace(/^["']|["']$/g,'');
+  if(!str||str.toLowerCase()==='never'||str==='-')return null;
+  if(/^\d{9,11}$/.test(str))return parseInt(str);
+  // ISO with optional comma: "2026-06-29, 14:23:24" or "2026-06-29 14:23:24" or "2026-06-29T14:23:24"
+  const iso=str.match(/^(\d{4})-(\d{1,2})-(\d{1,2})[,\sT]+(\d{1,2}):(\d{2})(?::(\d{2}))?/);
+  if(iso){const[,y,mo,d,h,mi,s]=iso;return new Date(parseInt(y),parseInt(mo)-1,parseInt(d),parseInt(h),parseInt(mi),parseInt(s||0)).getTime()/1000}
+  // "03/11/2025 14:34"
+  const sl=str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})\s*(\d{1,2}):?(\d{2})?:?(\d{2})?/);
+  if(sl){let[,a,b,y,h,mi,s]=sl;h=parseInt(h||0);mi=parseInt(mi||0);s=parseInt(s||0);if(parseInt(a)>12)return new Date(parseInt(y),parseInt(b)-1,parseInt(a),h,mi,s).getTime()/1000;return new Date(parseInt(y),parseInt(a)-1,parseInt(b),h,mi,s).getTime()/1000}
+  // "Monday, 3 November 2025, 2:34 PM"
+  const vb=str.match(/(\d{1,2})\s+(\w{3,9})\s+(\d{4}),?\s+(\d{1,2}):(\d{2})\s*(am|pm)?/i);
+  if(vb){let[,day,mon,yr,hour,min,ampm]=vb;hour=parseInt(hour);min=parseInt(min);if(ampm){if(ampm.toLowerCase()==='pm'&&hour<12)hour+=12;if(ampm.toLowerCase()==='am'&&hour===12)hour=0}const mi3=MM[mon.toLowerCase().substring(0,3)];if(mi3!==undefined)return new Date(parseInt(yr),mi3,parseInt(day),hour,min,0).getTime()/1000}
+  const d=new Date(str);if(!isNaN(d.getTime())&&d.getFullYear()>2000&&d.getFullYear()<2100)return d.getTime()/1000;
+  return null;
+}
+
+function findCol(headers,...kws){const low=headers.map(h=>h.toLowerCase().replace(/[_\-\s]+/g,' ').replace(/\uFEFF/g,'').replace(/"/g,''));for(const kw of kws){const idx=low.findIndex(h=>h.includes(kw.toLowerCase()));if(idx>=0)return idx}return-1}
+
+/* ===== FILE HANDLERS ===== */
+function handleDragOver(e,id){e.preventDefault();e.stopPropagation();document.getElementById(id).classList.add('dragover')}
+function handleDragLeave(e,id){e.preventDefault();e.stopPropagation();document.getElementById(id).classList.remove('dragover')}
+function handleDrop(e,type){e.preventDefault();e.stopPropagation();document.getElementById('zone'+type.charAt(0).toUpperCase()+type.slice(1)).classList.remove('dragover');if(e.dataTransfer.files[0])processFile(e.dataTransfer.files[0],type)}
+function handleFileSelect(input,type){if(input.files[0])processFile(input.files[0],type);input.value=''}
+
+function processFile(file,type){
+  const cap=type.charAt(0).toUpperCase()+type.slice(1);
+  const zone=document.getElementById('zone'+cap);
+  zone.classList.remove('loaded','error');
+  const reader=new FileReader();
+  reader.onload=function(e){
+    const text=e.target.result;
+    const{rows,delimiter}=parseCSV(text);
+    const dbg=document.getElementById('debugBody'+cap);
+    const dbgPanel=document.getElementById('debug'+cap);
+    let log=[];
+    log.push(`<span class="dbg-label">FILE:</span> ${file.name} (${(file.size/1024).toFixed(1)} KB)`);
+    log.push(`<span class="dbg-label">DELIMITER:</span> "${delimiter==='\t'?'TAB':delimiter}" (auto-detected)`);
+    log.push(`<span class="dbg-label">RAW ROWS:</span> ${rows.length} (after stripping row-number column if present)`);
+    log.push('');
+    if(rows.length<2){log.push(`<span class="dbg-fail">ERROR: Only ${rows.length} row(s) — no data</span>`);dbg.innerHTML=log.join('\n');dbgPanel.classList.add('visible');zone.classList.add('error');showToast('File appears empty','error');return}
+    log.push(`<span class="dbg-label">COLUMNS (${rows[0].length}):</span>`);
+    rows[0].forEach((h,i)=>log.push(`  [${i}] "${h}"`));
+    log.push('');
+    try{
+      switch(type){case'logs':parseLogs(rows,log);break;case'completion':parseCompletion(rows,log);break;case'grades':parseGrades(rows,log);break;case'users':parseUsers(rows,log);break}
+      zone.classList.add('loaded');
+      const count=type==='logs'?S.logs.length:type==='completion'?S.completion.rows.length:type==='grades'?S.grades.rows.length:S.users.length;
+      document.getElementById('fileInfo'+cap).textContent=file.name;document.getElementById('fileInfo'+cap).style.display='block';
+      document.getElementById('rowCount'+cap).textContent=count.toLocaleString()+' records';document.getElementById('rowCount'+cap).style.display='block';
+      log.push(`<span class="dbg-ok">SUCCESS: Parsed ${count.toLocaleString()} records</span>`);
+      updateImportStatus();updateDashboard();showToast(`Imported ${file.name} — ${count.toLocaleString()} records`,'success');
+    }catch(err){zone.classList.add('error');log.push(`<span class="dbg-fail">ERROR: ${err.message}</span>`);showToast('Import failed — open Parser Debug for details','error')}
+    dbg.innerHTML=log.join('\n');dbgPanel.classList.add('visible');
+    if(type==='logs'){dbg.classList.add('open');document.getElementById('debugChevron'+cap).classList.add('open')}
+  };
+  reader.readAsText(file);
+}
+
+/* ===== LOG PARSER — handles your exact format ===== */
+function parseLogs(rows,log){
+  const headers=rows[0];
+  const ti=findCol(headers,'time','date','timestamp');
+  const ui=findCol(headers,'user full name','user','fullname','name');
+  const ci=findCol(headers,'component');
+  const ei=findCol(headers,'event name','event','eventname','action');
+  const xi=findCol(headers,'event context','context');
+  const di=findCol(headers,'description','desc');
+
+  log.push(`<span class="dbg-label">COLUMN MAPPING:</span>`);
+  log.push(`  Time:      [${ti}] ${ti>=0?'"'+headers[ti]+'"':'<span class="dbg-fail">NOT FOUND</span>'}`);
+  log.push(`  User:      [${ui}] ${ui>=0?'"'+headers[ui]+'"':'<span class="dbg-dim">optional</span>'}`);
+  log.push(`  Component: [${ci}] ${ci>=0?'"'+headers[ci]+'"':'<span class="dbg-dim">optional</span>'}`);
+  log.push(`  Event:     [${ei}] ${ei>=0?'"'+headers[ei]+'"':'<span class="dbg-dim">optional</span>'}`);
+  log.push(`  Context:   [${xi}] ${xi>=0?'"'+headers[xi]+'"':'<span class="dbg-dim">optional</span>'}`);
+  log.push('');
+  if(ti<0)throw new Error('Could not find "Time" column. Your headers are listed above — the parser looks for: time, date, or timestamp');
+
+  S.logs=[];S.moduleMap={};let minT=Infinity,maxT=0,parseFail=0;
+  const pv=Math.min(3,rows.length-1);
+  log.push(`<span class="dbg-label">FIRST ${pv} DATA ROWS:</span>`);
+  for(let r=1;r<=pv;r++)log.push(`  Row ${r}: ${rows[r].map(c=>'"'+c.substring(0,50)+'"').join(' | ')}`);
+  log.push('');
+
+  for(let r=1;r<rows.length;r++){
+    const row=rows[r];if(!row[ti])continue;
+    const t=parseMoodleDate(row[ti]);
+    if(!t){parseFail++;if(parseFail<=3)log.push(`  <span class="dbg-warn">Row ${r+1}: unparseable date "${row[ti].substring(0,60)}"</span>`);continue}
+    if(t<minT)minT=t;if(t>maxT)maxT=t;
+    let user=ui>=0?(row[ui]||'').trim():'Unknown';
+    if(user==='-'||user==='')user='System';
+    const component=ci>=0?(row[ci]||'').trim():'';
+    const event=ei>=0?(row[ei]||'').trim():'';
+    const context=xi>=0?(row[xi]||'').trim():'';
+    const desc=di>=0?(row[di]||'').trim():'';
+    // Extract module/lesson name from context: "Lesson: Sock Design and Engineering" → "Sock Design and Engineering"
+    let moduleName=null;
+    if(context){const m=context.match(/^(?:Lesson|Forum|URL|Quiz|Assignment|Page|Resource|SCORM):\s*(.+)/i);if(m)moduleName=m[1].trim()}
+    S.logs.push({time:t,user,event,component,context,desc,module:moduleName});
+    // Build module map
+    if(moduleName&&!S.moduleMap[moduleName])S.moduleMap[moduleName]={views:0,questions:0,starts:0,completions:0,total:0};
+  }
+
+  if(parseFail>0)log.push(`<span class="dbg-warn">WARNING: ${parseFail} rows skipped (unparseable dates)</span>`);
+  if(!S.logs.length)throw new Error(`No valid entries. ${parseFail} rows had bad dates. Check "FIRST 3 DATA ROWS" above.`);
+  log.push(`<span class="dbg-label">DATE RANGE:</span> ${new Date(minT*1000).toLocaleDateString()} to ${new Date(maxT*1000).toLocaleDateString()}`);
+  log.push(`<span class="dbg-label">UNIQUE USERS:</span> ${new Set(S.logs.filter(l=>l.user!=='System').map(l=>l.user)).size}`);
+  log.push(`<span class="dbg-label">COMPONENTS FOUND:</span>`);
+  const comps={};S.logs.forEach(l=>{comps[l.component]=(comps[l.component]||0)+1});
+  Object.entries(comps).sort((a,b)=>b[1]-a[1]).forEach(([c,n])=>log.push(`  ${c||'(empty)'}: ${n}`));
+  log.push(`<span class="dbg-label">EVENT NAMES FOUND:</span>`);
+  const evts={};S.logs.forEach(l=>{evts[l.event]=(evts[l.event]||0)+1});
+  Object.entries(evts).sort((a,b)=>b[1]-a[1]).slice(0,15).forEach(([e,n])=>log.push(`  ${e}: ${n}`));
+  const ml=Object.keys(S.moduleMap);
+  if(ml.length){log.push(`<span class="dbg-label">LESSONS/MODULES EXTRACTED:</span>`);ml.forEach(m=>log.push(`  ${m}`))}
+  S.dateRange.min=S.dateRange.min?Math.min(S.dateRange.min,minT):minT;
+  S.dateRange.max=S.dateRange.max?Math.max(S.dateRange.max,maxT):maxT;
+  S.totalEnrolled=new Set(S.logs.filter(l=>l.user!=='System').map(l=>l.user)).size;
+}
+
+function parseCompletion(rows,log){
+  const headers=rows[0];const fi=findCol(headers,'first name','firstname'),li=findCol(headers,'last name','lastname','surname'),ei=findCol(headers,'email','e-mail');
+  log.push(`<span class="dbg-label">MAPPING:</span> First [${fi}] Last [${li}] Email [${ei}]`);
+  if(fi<0||li<0)throw new Error('Could not find name columns.');
+  const ac=[];const mm={};
+  for(let c=0;c<headers.length;c++){const h=headers[c].trim();if(h.match(/^activity:/i)||h.match(/module\s*\d/i)||h.match(/quiz\s/i)||h.match(/assignment/i)){ac.push(c);const m=h.match(/module\s*(\d)/i);if(m)mm[c]=parseInt(m[1])}}
+  if(!ac.length)throw new Error('No activity columns found. Headers need "Activity:" prefix or "Module X" pattern.');
+  log.push(`<span class="dbg-label">ACTIVITY COLUMNS:</span> ${ac.length}`);
+  S.completion={headers,activityCols:ac,moduleMap:mm,rows:[]};S.totalEnrolled=rows.length-1;
+  for(let r=1;r<rows.length;r++){const row=rows[r];const name=((row[fi]||'').trim()+' '+(row[li]||'').trim()).trim();const email=ei>=0?(row[ei]||'').trim():'';const acts={};for(const c of ac){const v=(row[c]||'').trim().toLowerCase();acts[c]=v==='yes'||v==='complete'||v==='1'||v==='true'||v==='x'}S.completion.rows.push({name,email,activities:acts})}
+  log.push(`<span class="dbg-ok">SUCCESS: ${S.completion.rows.length} learners, ${ac.length} activities</span>`);
+}
+
+function parseGrades(rows,log){
+  const headers=rows[0];const fi=findCol(headers,'first name','firstname'),li=findCol(headers,'last name','lastname','surname'),ei=findCol(headers,'email','e-mail');
+  log.push(`<span class="dbg-label">MAPPING:</span> First [${fi}] Last [${li}] Email [${ei}]`);
+  if(fi<0||li<0)throw new Error('Could not find name columns.');
+  const skip=['first name','last name','id number','email','e-mail','institution','department','last download'];
+  const gc=[];const gm={};
+  for(let c=0;c<headers.length;c++){const h=headers[c].trim().toLowerCase();if(skip.some(p=>h.includes(p)))continue;if(h){gc.push(c);const m=headers[c].trim().match(/module\s*(\d)/i);if(m)gm[c]=parseInt(m[1])}}
+  if(!gc.length)throw new Error('No grade columns found.');
+  log.push(`<span class="dbg-label">GRADE COLUMNS:</span> ${gc.length}`);
+  S.grades={headers,gradeCols:gc,moduleMap:gm,rows:[]};
+  for(let r=1;r<rows.length;r++){const row=rows[r];const name=((row[fi]||'').trim()+' '+(row[li]||'').trim()).trim();const email=ei>=0?(row[ei]||'').trim():'';const grades={};for(const c of gc){const v=parseFloat((row[c]||'').replace(/[%,]/g,''));grades[c]=isNaN(v)?null:v}S.grades.rows.push({name,email,grades})}
+  if(!S.totalEnrolled)S.totalEnrolled=S.grades.rows.length;
+  log.push(`<span class="dbg-ok">SUCCESS: ${S.grades.rows.length} learners, ${gc.length} grade items</span>`);
+}
+
+function parseUsers(rows,log){
+  const headers=rows[0];const fi=findCol(headers,'first name','firstname'),li=findCol(headers,'last name','lastname','surname'),ei=findCol(headers,'email','e-mail'),ai=findCol(headers,'last access','lastaccess');
+  log.push(`<span class="dbg-label">MAPPING:</span> First [${fi}] Last [${li}] Email [${ei}] Access [${ai}]`);
+  if(fi<0||li<0)throw new Error('Could not find name columns.');
+  S.users=[];
+  for(let r=1;r<rows.length;r++){const row=rows[r];const name=((row[fi]||'').trim()+' '+(row[li]||'').trim()).trim();const email=ei>=0?(row[ei]||'').trim():'';let la=null;if(ai>=0){const v=(row[ai]||'').trim();if(v&&v.toLowerCase()!=='never'){la=parseMoodleDate(v);if(!la&&/^\d+$/.test(v))la=parseInt(v)}}S.users.push({name,email,lastAccess:la})}
+  if(!S.totalEnrolled)S.totalEnrolled=S.users.length;
+  log.push(`<span class="dbg-ok">SUCCESS: ${S.users.length} users</span>`);
+}
+
+/* ===== CLASSIFICATION — human-readable event names ===== */
+function classifyLog(e){
+  const ev=e.event.toLowerCase(),comp=e.component.toLowerCase();
+  if(ev==='course viewed'&&comp==='system')return'session';
+  if(ev.includes('viewed'))return'view';
+  if(ev.includes('question answered'))return'question';
+  if(ev.includes('lesson started')||ev.includes('lesson ended')||ev.includes('lesson resumed')||ev.includes('lesson restarted'))return'lesson_lifecycle';
+  if(comp==='forum')return'forum';
+  if(ev.includes('graded')||ev.includes('completion updated')||ev.includes('course completed'))return'grade';
+  if(ev.includes('report viewed')||ev.includes('list viewed'))return'report';
+  return'other';
+}
+
+/* ===== COMPUTATION ===== */
+function getWeekIndex(ts){if(!S.dateRange.min)return 0;return Math.min(getNumWeeks()-1,Math.max(0,Math.floor((ts-S.dateRange.min)/86400/7)))}
+function getNumWeeks(){if(!S.dateRange.min||!S.dateRange.max)return 0;return Math.max(1,Math.ceil((S.dateRange.max-S.dateRange.min)/86400/7))}
+function getWeekLabels(){return Array.from({length:getNumWeeks()},(_,i)=>'W'+(i+1))}
+
+function computeTrend(){
+  if(!S.logs)return null;
+  const n=getNumWeeks(),labels=getWeekLabels();
+  const sessions=new Array(n).fill(0),views=new Array(n).fill(0),lesson=new Array(n).fill(0);
+  const sessionUsers=Array.from({length:n},()=>new Set());
+  for(const e of S.logs){if(e.user==='System')continue;const w=getWeekIndex(e.time);const t=classifyLog(e);
+    if(t==='session')sessionUsers[w].add(e.user);
+    else if(t==='view')views[w]++;
+    else if(t==='question'||t==='lesson_lifecycle')lesson[w]++}
+  return{labels,sessions:sessionUsers.map(s=>s.size),contentViews:views,lessonActivity:lesson};
+}
+
+function computeMix(){
+  if(!S.logs)return null;
+  const c={};
+  const lm={session:'Sessions (Course viewed)',view:'Content/Module Views',question:'Questions Answered',lesson_lifecycle:'Lesson Start/End/Resume',forum:'Forum Activity',grade:'Grades & Completion',report:'Report Views',other:'Other'};
+  const cm={session:'#CC0000',view:'#343A40',question:'#E63946',lesson_lifecycle:'#990000',forum:'#6C757D',grade:'#ADB5BD',report:'#CED4DA',other:'#E9ECEF'};
+  for(const e of S.logs){if(e.user==='System')continue;const t=classifyLog(e);c[t]=(c[t]||0)+1}
+  const labels=[],data=[],colors=[];
+  for(const[k,v]of Object.entries(c).sort((a,b)=>b[1]-a[1])){labels.push(lm[k]||k);data.push(v);colors.push(cm[k]||'#CED4DA')}
+  return{labels,data,colors};
+}
+
+function computeModuleActivity(){
+  if(!S.logs||!Object.keys(S.moduleMap).length)return null;
+  // Recount per module
+  const mm={};
+  for(const e of S.logs){if(!e.module||e.user==='System')continue;
+    if(!mm[e.module])mm[e.module]={views:0,questions:0,starts:0,completions:0,total:0};
+    mm[e.module].total++;const t=classifyLog(e);
+    if(t==='view')mm[e.module].views++;
+    if(t==='question')mm[e.module].questions++;
+    if(t==='lesson_lifecycle'&&e.event.toLowerCase().includes('started'))mm[e.module].starts++;
+    if(e.event.toLowerCase().includes('completion updated'))mm[e.module].completions++;
+  }
+  const sorted=Object.entries(mm).sort((a,b)=>b[1].total-a[1].total);
+  return{labels:sorted.map(([k])=>k),data:sorted.map(([,v])=>v.total),details:sorted};
+}
+
+function computeHeatmap(){
+  if(!S.logs)return null;
+  const n=getNumWeeks();const grid=Array.from({length:7},()=>new Array(n).fill(0));
+  for(const e of S.logs){if(e.user==='System')continue;const w=getWeekIndex(e.time);let dow=new Date(e.time*1000).getDay()-1;if(dow<0)dow=6;grid[dow][w]++}
+  return{days:DAY_NAMES,weeks:getWeekLabels(),data:grid};
+}
+
+function computeLessonTrend(){
+  if(!S.logs)return null;
+  const n=getNumWeeks(),labels=getWeekLabels();
+  const questions=new Array(n).fill(0),lifecycle=new Array(n).fill(0),content=new Array(n).fill(0);
+  for(const e of S.logs){if(e.user==='System')continue;const w=getWeekIndex(e.time);const t=classifyLog(e);
+    if(t==='question')questions[w]++;
+    else if(t==='lesson_lifecycle')lifecycle[w]++;
+    else if(t==='view'&&e.event.toLowerCase().includes('content page'))content[w]++}
+  return{labels,questions,lifecycle,content};
+}
+
+function computeQuizPerf(){
+  if(!S.grades)return null;
+  const modules={};for(const c of S.grades.gradeCols){const m=S.grades.moduleMap[c]||0;if(!modules[m])modules[m]=[];modules[m].push(c)}
+  const sk=Object.keys(modules).map(Number).sort((a,b)=>a-b);const labels=[],avgS=[],passR=[];
+  for(const k of sk){const cols=modules[k];labels.push('Item '+(k||'?'));const ls=[];for(const row of S.grades.rows){const sc=cols.map(c=>row.grades[c]).filter(v=>v!==null);if(sc.length)ls.push(sc.reduce((a,b)=>a+b,0)/sc.length)}if(ls.length){avgS.push(+(ls.reduce((a,b)=>a+b,0)/ls.length).toFixed(1));passR.push(+(ls.filter(s=>s>=60).length/ls.length*100).toFixed(0))}else{avgS.push(0);passR.push(0)}}
+  return{labels,avgScores:avgS,passRates:passR};
+}
+
+function computeAtRisk(){
+  const ar=[];if(!S.logs)return ar;
+  const um={};const now=Math.floor(Date.now()/1000);
+  for(const e of S.logs){if(e.user==='System')continue;if(!um[e.user])um[e.user]={lastActivity:0,totalEvents:0,lessonsStarted:0};
+    if(e.time>um[e.user].lastActivity)um[e.user].lastActivity=e.time;
+    um[e.user].totalEvents++;
+    if(e.event.toLowerCase().includes('lesson started'))um[e.user].lessonsStarted++}
+  // Compute median events
+  const allEvents=Object.values(um).map(u=>u.totalEvents).sort((a,b)=>a-b);
+  const median=allEvents.length?allEvents[Math.floor(allEvents.length/2)]:1;
+  for(const[name,d]of Object.entries(um)){
+    const factors=[];const daysInactive=Math.floor((now-d.lastActivity)/86400);
+    if(daysInactive>=7)factors.push(`No activity ${daysInactive}d`);
+    if(d.totalEvents<median*0.25)factors.push(`Very low activity (${d.totalEvents} events)`);
+    if(d.lessonsStarted===0&&d.totalEvents>0)factors.push('No lessons started');
+    if(!factors.length)continue;
+    const lvl=(daysInactive>=14||d.totalEvents<median*0.1)?'high':'medium';
+    ar.push({name,email:'',lastActivity:new Date(d.lastActivity*1000).toLocaleDateString(),totalEvents:d.totalEvents,lessonsStarted:d.lessonsStarted,daysInactive,factors:factors.join(' + '),level:lvl});
+  }
+  ar.sort((a,b)=>b.daysInactive-a.daysInactive);return ar;
+}
+
+function computeModuleDetail(){
+  const ma=computeModuleActivity();if(!ma||!ma.details)return null;
+  return ma.details.map(([name,v])=>({mod:name,section:name,views:v.views,questions:v.questions,starts:v.starts,completions:v.completions,total:v.total}));
+}
+
+/* ===== CHARTS ===== */
+Chart.defaults.font.family="'DM Sans',sans-serif";Chart.defaults.color='#6B7280';
+const TT={backgroundColor:'#111827',titleFont:{family:"'Space Grotesk',sans-serif",size:12,weight:'600'},bodyFont:{size:11.5},padding:10,cornerRadius:6};
+const GRID={color:'rgba(30,27,24,0.04)',drawBorder:false};
+
+function initCharts(){
+  charts.trend=new Chart(document.getElementById('chartTrend'),{type:'line',data:{labels:[],datasets:[
+    {label:'Sessions',data:[],borderColor:'#CC0000',backgroundColor:'rgba(204,0,0,0.08)',fill:true,tension:.35,borderWidth:2.5,pointRadius:3,pointHoverRadius:6,pointBackgroundColor:'#CC0000'},
+    {label:'Content Views',data:[],borderColor:'#343A40',backgroundColor:'rgba(52,58,64,0.06)',fill:true,tension:.35,borderWidth:2.5,pointRadius:3,pointHoverRadius:6,pointBackgroundColor:'#343A40',yAxisID:'y1'},
+    {label:'Lesson Activity',data:[],borderColor:'#990000',backgroundColor:'rgba(153,0,0,0.06)',fill:true,tension:.35,borderWidth:2,pointRadius:3,pointHoverRadius:6,pointBackgroundColor:'#990000',borderDash:[4,3]},
+  ]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:false},tooltip:TT},scales:{x:{grid:{display:false},ticks:{font:{size:11,weight:'500'}}},y:{position:'left',beginAtZero:true,grid:GRID,ticks:{font:{size:11}}},y1:{position:'right',beginAtZero:true,grid:{drawOnChartArea:false},ticks:{font:{size:11}}}},animation:{duration:800,easing:'easeOutQuart'}}});
+  charts.mix=new Chart(document.getElementById('chartMix'),{type:'doughnut',data:{labels:[],datasets:[{data:[],backgroundColor:[],borderWidth:2,borderColor:'#fff',hoverOffset:6}]},options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{display:false},tooltip:{...TT,callbacks:{label:c=>{const t=c.dataset.data.reduce((a,b)=>a+b,0);return` ${c.label}: ${c.parsed} (${(c.parsed/t*100).toFixed(1)}%)`}}}},animation:{animateRotate:true,duration:1000}}});
+  charts.moduleComp=new Chart(document.getElementById('chartModuleComp'),{type:'bar',data:{labels:[],datasets:[{data:[],backgroundColor:'rgba(204,0,0,0.75)',borderColor:'#CC0000',borderWidth:1,borderRadius:4,barPercentage:.6}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{...TT}},scales:{x:{beginAtZero:true,grid:GRID,ticks:{font:{size:11}}},y:{grid:{display:false},ticks:{font:{size:12,weight:'500',family:"'Space Grotesk',sans-serif"}}}},animation:{duration:800,easing:'easeOutQuart'}}});
+  charts.quiz=new Chart(document.getElementById('chartQuiz'),{type:'bar',data:{labels:[],datasets:[
+    {label:'Avg. Score',data:[],backgroundColor:'rgba(204,0,0,0.8)',borderColor:'#CC0000',borderWidth:1,borderRadius:4,barPercentage:.5,order:2},
+    {label:'Pass Rate',data:[],type:'line',borderColor:'rgba(52,58,64,0.35)',backgroundColor:'rgba(52,58,64,0.06)',fill:true,tension:.3,borderWidth:2,pointRadius:4,pointBackgroundColor:'#fff',pointBorderColor:'rgba(52,58,64,0.5)',pointBorderWidth:2,order:1}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{...TT,callbacks:{label:c=>` ${c.dataset.label}: ${c.parsed.y}%`}}},scales:{x:{grid:{display:false},ticks:{font:{size:11}}},y:{beginAtZero:true,max:100,grid:GRID,ticks:{callback:v=>v+'%',font:{size:11}}}},animation:{duration:800,easing:'easeOutQuart'}}});
+  charts.forum=new Chart(document.getElementById('chartForum'),{type:'line',data:{labels:[],datasets:[
+    {label:'Questions',data:[],borderColor:'#CC0000',backgroundColor:'rgba(204,0,0,0.12)',fill:true,tension:.35,borderWidth:2,pointRadius:3,pointBackgroundColor:'#CC0000'},
+    {label:'Started/Ended',data:[],borderColor:'#343A40',backgroundColor:'rgba(52,58,64,0.1)',fill:true,tension:.35,borderWidth:2,pointRadius:3,pointBackgroundColor:'#343A40'},
+    {label:'Content Pages',data:[],borderColor:'rgba(153,0,0,0.6)',backgroundColor:'rgba(153,0,0,0.06)',fill:true,tension:.35,borderWidth:2,pointRadius:3,pointBackgroundColor:'#990000',borderDash:[4,3]}
+  ]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:false},tooltip:TT},scales:{x:{grid:{display:false},ticks:{font:{size:11}}},y:{beginAtZero:true,grid:GRID,ticks:{font:{size:11}}}},animation:{duration:800,easing:'easeOutQuart'}}});
+}
+
+/* ===== DASHBOARD UPDATE ===== */
+function updateDashboard(){
+  if(S.dateRange.min&&S.dateRange.max){const f=d=>new Date(d*1000).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});document.getElementById('dateRangeText').textContent=f(S.dateRange.min)+' — '+f(S.dateRange.max)}
+  if(S.totalEnrolled){document.getElementById('enrolledBadge').style.display='inline-flex';document.getElementById('enrolledCount').textContent=S.totalEnrolled}
+  const trend=computeTrend();
+  if(trend){document.getElementById('noTrend').style.display='none';charts.trend.data.labels=trend.labels;charts.trend.data.datasets[0].data=trend.sessions;charts.trend.data.datasets[1].data=trend.contentViews;charts.trend.data.datasets[2].data=trend.lessonActivity;charts.trend.update()}else document.getElementById('noTrend').style.display='flex';
+  const mix=computeMix();
+  if(mix){document.getElementById('noMix').style.display='none';charts.mix.data.labels=mix.labels;charts.mix.data.datasets[0].data=mix.data;charts.mix.data.datasets[0].backgroundColor=mix.colors;charts.mix.update()}else document.getElementById('noMix').style.display='flex';
+  const ma=computeModuleActivity();
+  if(ma){document.getElementById('noModuleComp').style.display='none';charts.moduleComp.data.labels=ma.labels;charts.moduleComp.data.datasets[0].data=ma.data;charts.moduleComp.update()}else document.getElementById('noModuleComp').style.display='flex';
+  const qp=computeQuizPerf();
+  if(qp){document.getElementById('noQuiz').style.display='none';charts.quiz.data.labels=qp.labels;charts.quiz.data.datasets[0].data=qp.avgScores;charts.quiz.data.datasets[1].data=qp.passRates;charts.quiz.update()}else document.getElementById('noQuiz').style.display='flex';
+  const heat=computeHeatmap();
+  if(heat){document.getElementById('noHeat').style.display='none';buildHeatmap(heat)}else{document.getElementById('noHeat').style.display='flex';document.getElementById('heatmapContainer').innerHTML=''}
+  const lt=computeLessonTrend();
+  if(lt){document.getElementById('noForum').style.display='none';charts.forum.data.labels=lt.labels;charts.forum.data.datasets[0].data=lt.questions;charts.forum.data.datasets[1].data=lt.lifecycle;charts.forum.data.datasets[2].data=lt.content;charts.forum.update()}else document.getElementById('noForum').style.display='flex';
+  updateKPIs(trend,ma,lt);S.atRiskList=computeAtRisk();renderRiskTable('all');updateRiskTabs();renderModuleDetail();
+}
+
+function updateKPIs(trend,ma,lt){
+  const kA=document.getElementById('kpiActive'),kC=document.getElementById('kpiCompletion'),kE=document.getElementById('kpiEvents'),kR=document.getElementById('kpiAtRisk');
+  if(S.logs){const now=Math.floor(Date.now()/1000),wa=now-7*86400;const a=new Set(S.logs.filter(e=>e.user!=='System'&&e.time>=wa).map(e=>e.user));kA.innerHTML=a.size;document.getElementById('kpiActiveSub').innerHTML=`of ${S.totalEnrolled} learners`}else{kA.innerHTML='<span class="kpi-na">Awaiting logs</span>';document.getElementById('kpiActiveSub').innerHTML=''}
+  if(S.totalEnrolled){kC.innerHTML=S.totalEnrolled;document.getElementById('kpiCompletionSub').innerHTML=ma?`${Object.keys(S.moduleMap).length} lessons detected`:''}else{kC.innerHTML='<span class="kpi-na">Awaiting data</span>';document.getElementById('kpiCompletionSub').innerHTML=''}
+  if(S.logs){kE.innerHTML=S.logs.filter(l=>l.user!=='System').length.toLocaleString();document.getElementById('kpiEventsSub').innerHTML=`${getNumWeeks()} weeks`}else{kE.innerHTML='<span class="kpi-na">Awaiting logs</span>';document.getElementById('kpiEventsSub').innerHTML=''}
+  if(S.logs){kR.innerHTML=S.atRiskList.length;const h=S.atRiskList.filter(l=>l.level==='high').length;document.getElementById('kpiAtRiskSub').innerHTML=h?`<span class="down">${h} high risk</span>`:'No high-risk learners'}else{kR.innerHTML='<span class="kpi-na">Awaiting data</span>';document.getElementById('kpiAtRiskSub').innerHTML=''}
+}
+
+function buildHeatmap(heat){
+  const c=document.getElementById('heatmapContainer');c.innerHTML='';const mx=Math.max(1,...heat.data.flat());const stops=['#F8F9FA','#E9ECEF','#FCA5A5','#EF4444','#CC0000','#990000'];
+  const hr=document.createElement('div');hr.style.cssText='display:grid;grid-template-columns:40px repeat('+heat.weeks.length+',1fr);gap:3px;margin-bottom:3px;';hr.innerHTML='<div></div>'+heat.weeks.map(w=>`<div style="font-size:9.5px;color:var(--muted);text-align:center;font-weight:500">${w}</div>`).join('');c.appendChild(hr);
+  heat.days.forEach((day,di)=>{const row=document.createElement('div');row.style.cssText='display:grid;grid-template-columns:40px repeat('+heat.weeks.length+',1fr);gap:3px;align-items:center;';row.innerHTML=`<div style="font-size:10px;color:var(--muted);font-weight:500;text-align:right;padding-right:5px">${day}</div>`;heat.data[di].forEach((val,wi)=>{const ci=Math.min(Math.floor(val/mx*(stops.length-1)),stops.length-1);const cell=document.createElement('div');cell.className='heat-cell';cell.style.background=stops[ci];cell.title=`${day}, ${heat.weeks[wi]}: ${val} events`;row.appendChild(cell)});c.appendChild(row)});
+  const lg=document.getElementById('heatmapLegend');lg.innerHTML='';stops.forEach(cl=>{const d=document.createElement('div');d.style.cssText='width:14px;height:14px;border-radius:2px;background:'+cl;lg.appendChild(d)});
+}
+
+function renderRiskTable(filter){
+  const tb=document.getElementById('riskTableBody');const list=filter==='all'?S.atRiskList:S.atRiskList.filter(l=>l.level===filter);
+  if(!list.length){const msg=S.atRiskList.length===0?(S.logs?'No at-risk learners':'Import data first'):`No ${filter}-risk`;tb.innerHTML=`<tr><td colspan="7" style="text-align:center;padding:28px;color:var(--muted);font-size:13px"><i class="fas fa-shield-halved" style="font-size:18px;display:block;margin-bottom:6px;color:var(--border)"></i>${msg}</td></tr>`;return}
+  tb.innerHTML='';list.forEach(l=>{const dc=l.daysInactive>=14?'var(--red)':'var(--amber)';const rc=l.level==='high'?'risk-high':'risk-medium';const ri=l.level==='high'?'fa-circle-exclamation':'fa-triangle-exclamation';const seed=l.name.replace(/\s/g,'').toLowerCase().substring(0,8);const tr=document.createElement('tr');tr.innerHTML=`<td><div style="display:flex;align-items:center;gap:9px"><img src="https://picsum.photos/seed/${seed}/56/56.jpg" class="avatar-sm" alt=""><div><div style="font-weight:500">${l.name}</div></div></div></td><td style="font-size:12px;color:var(--muted)">${l.lastActivity}</td><td style="font-family:'Space Grotesk',sans-serif;font-weight:600">${l.totalEvents}</td><td style="font-family:'Space Grotesk',sans-serif">${l.lessonsStarted}</td><td style="font-family:'Space Grotesk',sans-serif;font-weight:600;color:${dc}">${l.daysInactive}d</td><td style="font-size:12px;color:var(--muted);max-width:220px">${l.factors}</td><td><span class="risk-badge ${rc}"><i class="fas ${ri}" style="font-size:10px"></i> ${l.level.charAt(0).toUpperCase()+l.level.slice(1)}</span></td>`;tb.appendChild(tr)});
+}
+function updateRiskTabs(){const t=document.getElementById('riskTabs');t.children[0].textContent=`All (${S.atRiskList.length})`;t.children[1].textContent=`High (${S.atRiskList.filter(l=>l.level==='high').length})`;t.children[2].textContent=`Medium (${S.atRiskList.filter(l=>l.level==='medium').length})`}
+function filterRisk(btn,level){document.querySelectorAll('#riskTabs .tab-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderRiskTable(level)}
+
+function renderModuleDetail(){
+  const tb=document.getElementById('moduleDetailBody');const d=computeModuleDetail();
+  if(!d||!d.length){tb.innerHTML='<tr><td colspan="6" style="text-align:center;padding:28px;color:var(--muted);font-size:13px"><i class="fas fa-table" style="font-size:18px;display:block;margin-bottom:6px;color:var(--border)"></i>Import logs to populate</td></tr>';return}
+  tb.innerHTML='';d.forEach(m=>{const tr=document.createElement('tr');tr.innerHTML=`<td style="font-weight:500;font-size:12.5px">${m.mod}</td><td style="font-family:'Space Grotesk',sans-serif;font-weight:600">${m.views}</td><td style="font-family:'Space Grotesk',sans-serif">${m.questions}</td><td style="font-family:'Space Grotesk',sans-serif">${m.starts}</td><td style="font-family:'Space Grotesk',sans-serif">${m.completions}</td><td style="font-family:'Space Grotesk',sans-serif;font-weight:700">${m.total}</td>`;tb.appendChild(tr)});
+}
+
+/* ===== STATUS & CLEAR ===== */
+function updateImportStatus(){[{key:'Logs',data:S.logs,count:S.logs?S.logs.length:0},{key:'Completion',data:S.completion,count:S.completion?S.completion.rows.length:0},{key:'Grades',data:S.grades,count:S.grades?S.grades.rows.length:0},{key:'Users',data:S.users,count:S.users?S.users.length:0}].forEach(it=>{const el=document.getElementById('status'+it.key),pip=document.getElementById('pip'+it.key),cnt=document.getElementById('count'+it.key);if(it.data){el.classList.add('loaded');el.classList.remove('error');pip.classList.add('active');cnt.textContent=it.count.toLocaleString()}else{el.classList.remove('loaded','error');pip.classList.remove('active');cnt.textContent='\u2014'}})}
+function clearData(type){const cap=type.charAt(0).toUpperCase()+type.slice(1);S[type]=null;if(type==='logs'){S.dateRange={min:null,max:null};S.moduleMap={}}document.getElementById('zone'+cap).classList.remove('loaded','error');document.getElementById('fileInfo'+cap).style.display='none';document.getElementById('rowCount'+cap).style.display='none';document.getElementById('debug'+cap).classList.remove('visible');updateImportStatus();updateDashboard();showToast(cap+' cleared','info')}
+function clearAllData(){S.logs=null;S.completion=null;S.grades=null;S.users=null;S.dateRange={min:null,max:null};S.totalEnrolled=0;S.atRiskList=[];S.moduleMap={};['Logs','Completion','Grades','Users'].forEach(t=>{document.getElementById('zone'+t).classList.remove('loaded','error');document.getElementById('fileInfo'+t).style.display='none';document.getElementById('rowCount'+t).style.display='none';document.getElementById('debug'+t).classList.remove('visible')});updateImportStatus();updateDashboard();document.getElementById('dateRangeText').textContent='Import Moodle data to begin';document.getElementById('enrolledBadge').style.display='none';showToast('All data cleared','info')}
+
+/* ===== UI ===== */
+function toggleImportPanel(){const b=document.getElementById('importBody'),c=document.getElementById('importChevron');const o=b.style.display!=='none';b.style.display=o?'none':'grid';c.classList.toggle('open',!o)}
+function toggleDebug(cap){document.getElementById('debugBody'+cap).classList.toggle('open');document.getElementById('debugChevron'+cap).classList.toggle('open')}
+function toggleSidebar(){document.getElementById('sidebar').classList.toggle('open');document.getElementById('sidebarOverlay').classList.toggle('open')}
+function showToast(msg,type='success'){const t=document.getElementById('toast');const ic=type==='success'?'fa-check-circle':type==='error'?'fa-circle-exclamation':'fa-circle-info';t.className='toast '+type;t.querySelector('i').className='fas '+ic;document.getElementById('toastMsg').textContent=msg;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),3500)}
+function exportSummary(){if(!S.logs&&!S.completion&&!S.grades){showToast('No data','error');return}let csv='Textiles2Go Summary\nGenerated,'+new Date().toISOString()+'\n\n';if(S.dateRange.min)csv+='Range,'+new Date(S.dateRange.min*1000).toLocaleDateString()+' to '+new Date(S.dateRange.max*1000).toLocaleDateString()+'\n';csv+='Learners,'+S.totalEnrolled+'\nEvents,'+(S.logs?S.logs.length:0)+'\nAt-Risk,'+S.atRiskList.length+'\n\n';const md=computeModuleDetail();if(md){csv+='Lesson Detail\nLesson,Views,Questions,Starts,Completions,Total\n';md.forEach(m=>csv+=`"${m.mod}",${m.views},${m.questions},${m.starts},${m.completions},${m.total}\n`);csv+='\n'}const blob=new Blob([csv],{type:'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='ncstate_summary.csv';a.click();URL.revokeObjectURL(a.href);showToast('Exported','success')}
+
+/* ===== SAMPLE DATA ===== */
+function loadSampleData(){
+  const start=new Date(2026,5,1).getTime()/1000;const names=['Ajaunie White','Marcia Da Silva','Victoria Alonso','Sophie Martin','Kofi Asante','Emma Chen','Raj Patel','Fatima Al-Hassan','James Wilson','Mei-Ling Zhang'];
+  const lessons=['Sock Design and Engineering','Machinery and Equipment','Materials and Yarn Selection','Production and Business Operations','Specialty Applications'];
+  const logR=[['Time','User full name','Affected user','Event context','Component','Event name','Description','Origin','IP address']];
+  for(let day=0;day<30;day++){const ds=start+day*86400;const dow=new Date(ds*1000).getDay();const isW=dow===0||dow===6;const ac=isW?Math.floor(names.length*.4):Math.floor(names.length*.7);const sh=[...names].sort(()=>Math.random()-.5).slice(0,ac);
+  for(const nm of sh){const hr=9+Math.floor(Math.random()*10);const ts=ds+hr*3600+Math.floor(Math.random()*3600);const d=new Date(ts*1000);const ds2=d.toISOString().replace('T',', ').substring(0,16);const ip='152.1.'+Math.floor(Math.random()*255)+'.'+Math.floor(Math.random()*255);
+  logR.push([ds2,nm,'-','Course: NC State Textiles: The Complete Guide','System','Course viewed','The user with id \'X\' viewed the course with id \'1739\'.','web',ip]);
+  const les=lessons[Math.floor(Math.random()*lessons.length)];
+  logR.push([ds2,nm,'-','Lesson: '+les,'Lesson','Course module viewed','The user viewed the lesson.','web',ip]);
+  if(Math.random()<.6){logR.push([ds2,nm,'-','Lesson: '+les,'Lesson','Content page viewed','The user viewed a content page.','web',ip])}
+  if(Math.random()<.5){logR.push([ds2,nm,'-','Lesson: '+les,'Lesson','Question viewed','The user viewed a question.','web',ip]);logR.push([ds2,nm,'-','Lesson: '+les,'Lesson','Question answered','The user answered a question.','web',ip])}
+  if(Math.random()<.3){logR.push([ds2,nm,'-','Lesson: '+les,'Lesson','Lesson started','The user started the lesson.','web',ip])}
+  if(Math.random()<.15){logR.push([ds2,nm,'-','Course: NC State Textiles','System','Section viewed','Section viewed.','web',ip])}}}
+  try{const log=[];parseLogs(logR,log);['Logs'].forEach(t=>{document.getElementById('zone'+t).classList.add('loaded');document.getElementById('fileInfo'+t).textContent='sample_pipe.csv';document.getElementById('fileInfo'+t).style.display='block';document.getElementById('rowCount'+t).textContent=S.logs.length.toLocaleString()+' records';document.getElementById('rowCount'+t).style.display='block'});updateImportStatus();updateDashboard();showToast('Sample data loaded — 10 learners, 30 days','success')}catch(e){showToast('Error: '+e.message,'error')}}
+
+document.addEventListener('DOMContentLoaded',()=>{initCharts();document.getElementById('importBody').style.display='grid'});
+</script>
+</body>
+</html>

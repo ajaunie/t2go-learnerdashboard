@@ -1,0 +1,53 @@
+{
+  "name": "t2go-learnerdashboard",
+  "version": "1.0.0",
+  "description": "NC State T2Go Learner Engagement Dashboard",
+  "main": "main.js",
+  "author": "Ajaunie",
+  "scripts": {
+    "start": "electron .",
+    "build:win": "electron-builder --win",
+    "build:mac": "electron-builder --mac",
+    "release:win": "electron-builder --win -p always",
+    "release:mac": "electron-builder --mac -p always"
+  },
+  "build": {
+    "appId": "com.ncstate.t2go",
+    "productName": "NC State T2Go Dashboard",
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "Ajaunie",
+        "repo": "t2go-learnerdashboard",
+        "releaseType": "release"
+      }
+    ],
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "index.html",
+      "main.js",
+      "assets/**/*"
+    ],
+    "win": {
+      "target": "nsis"
+    },
+    "mac": {
+      "target": "dmg",
+      "category": "public.app-category.education"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": true,
+      "allowToChangeInstallationDirectory": true
+    }
+  },
+  "dependencies": {
+    "electron-updater": "^6.1.8"
+  },
+  "devDependencies": {
+    "electron": "^28.0.0",
+    "electron-builder": "^24.9.1"
+  }
+}
